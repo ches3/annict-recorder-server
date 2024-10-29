@@ -11,6 +11,7 @@ type Bindings = {
 
 const GetTokenSchema = object({
 	code: string(),
+	redirect_uri: string(),
 });
 
 const TokenResponseSchema = object({
@@ -30,6 +31,7 @@ app.use("*", cors({ origin: "*" }));
 
 app.get("/token", vValidator("query", GetTokenSchema), async (c) => {
 	const code = c.req.valid("query").code;
+	const redirectUri = c.req.valid("query").redirect_uri;
 
 	const clientId = c.env.CLIENT_ID;
 	if (!clientId) {
@@ -38,10 +40,6 @@ app.get("/token", vValidator("query", GetTokenSchema), async (c) => {
 	const clientSecret = c.env.CLIENT_SECRET;
 	if (!clientSecret) {
 		throw new Error("CLIENT_SECRET is not set");
-	}
-	const redirectUri = c.env.REDIRECT_URI;
-	if (!redirectUri) {
-		throw new Error("REDIRECT_URI is not set");
 	}
 
 	const params = new URLSearchParams({
@@ -57,7 +55,7 @@ app.get("/token", vValidator("query", GetTokenSchema), async (c) => {
 		method: "POST",
 	});
 	if (!res.ok) {
-		console.error(res);
+		console.error(await res.json());
 		return c.json({ message: "Failed to generate token" }, 400);
 	}
 
